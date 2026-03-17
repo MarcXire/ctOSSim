@@ -298,7 +298,7 @@
             
             // Fix Leaflet map sizing issue when unhiding container
             if (name === 'map' && map) {
-                setTimeout(() => map.invalidateSize(), 100);
+                setTimeout(() => map.invalidateSize(), 300);
             }
             
             vibrate(30);
@@ -751,11 +751,20 @@
             attributionControl: true
         }).setView([defaultLat, defaultLng], 15);
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap &copy; CARTO',
             subdomains: 'abcd',
             maxZoom: 20
         }).addTo(map);
+
+        // Map is ready, force size recalculation and show existing markers
+        map.whenReady(() => {
+            setTimeout(() => {
+                map.invalidateSize();
+                refreshDynamicMarkers();
+                seedCtosMarkers(state.myLat || defaultLat, state.myLng || defaultLng);
+            }, 200);
+        });
 
         // Initial setup
         if (navigator.geolocation) {
@@ -773,7 +782,12 @@
                 },
                 (err) => {
                     console.warn('Geolocation error:', err);
+                    // Use defaults if real location fails
+                    state.myLat = defaultLat;
+                    state.myLng = defaultLng;
                     seedCtosMarkers(defaultLat, defaultLng);
+                    updatePlayerMarker(defaultLat, defaultLng);
+                    refreshDynamicMarkers();
                 },
                 { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
             );
@@ -782,6 +796,16 @@
             watchId = navigator.geolocation.watchPosition(
                 (pos) => {
                     const { latitude, longitude } = pos.coords;
+                    
+                    // If this is the first accurate location, re-center and seed
+                    if (!state.myLat || getDistance(state.myLat, state.myLng, latitude, longitude) > 1000) {
+                        if (map) {
+                           map.setView([latitude, longitude], 16);
+                           seedCtosMarkers(latitude, longitude);
+                           refreshDynamicMarkers();
+                        }
+                    }
+
                     state.myLat = latitude;
                     state.myLng = longitude;
                     updateCoordsLabel(latitude, longitude);
@@ -792,7 +816,11 @@
                 { enableHighAccuracy: true, maximumAge: 5000 }
             );
         } else {
+            state.myLat = defaultLat;
+            state.myLng = defaultLng;
             seedCtosMarkers(defaultLat, defaultLng);
+            updatePlayerMarker(defaultLat, defaultLng);
+            refreshDynamicMarkers();
         }
 
         // Map events
@@ -887,9 +915,9 @@
             const style = MAP_TYPES[typeKey];
             const icon = L.divIcon({
                 className: 'ctos-marker dynamic',
-                html: `<div class="marker-pin" style="background:${style.color}; border:1.5px solid #fff; box-shadow:0 0 10px ${style.color}"></div><div class="marker-label" style="border-color:${style.color}; color:${style.color}">${style.name}</div>`,
-                iconSize: [16, 16],
-                iconAnchor: [8, 8]
+                html: `<div class="marker-pin" style="background:${style.color}; color:${style.color}; border:1.5px solid #fff; box-shadow:0 0 10px ${style.color}"></div><div class="marker-label" style="border-color:${style.color}; color:${style.color}">${style.name}</div>`,
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
             });
             const marker = L.marker([item.lat, item.lng], { icon: icon }).addTo(map);
             
@@ -934,9 +962,9 @@
             
             const icon = L.divIcon({
                 className: 'ctos-marker',
-                html: `<div class="marker-pin" style="background:${style.color}; border:1.5px solid #fff;"></div><div class="marker-label">${style.name}</div>`,
-                iconSize: [12, 12],
-                iconAnchor: [6, 6]
+                html: `<div class="marker-pin" style="background:${style.color}; color:${style.color}; border:1.5px solid #fff;"></div><div class="marker-label">${style.name}</div>`,
+                iconSize: [16, 16],
+                iconAnchor: [8, 8]
             });
 
             const marker = L.marker([mLat, mLng], { icon: icon }).addTo(map);
@@ -1064,28 +1092,37 @@
                     state.intercepting = false;
                     showNotification('INTERCEPCIÓN COMPLETA', 'Conversación grabada con éxito');
                     
-                    // Spawn a crime nearby if we have GPS
-                    if (state.myLat && state.myLng) {
-                        const angle = Math.random() * Math.PI * 2;
-                        const distanceDeg = (rand(200, 500) / 111320);
-                        const cLat = state.myLat + (Math.cos(angle) * distanceDeg);
-                        const cLng = state.myLng + (Math.sin(angle) * distanceDeg);
-                        const reward = rand(3000, 15000);
-                        
-                        state.activeCrimes.push({
-                            lat: cLat,
-                            lng: cLng,
-                            reward: reward,
-                            id: 'CRM-' + Date.now()
-                        });
-                        saveState();
-                        if (map) refreshDynamicMarkers();
-                        
-                        setTimeout(() => {
-                            showNotification('DELITO DETECTADO', 'Posible actividad criminal marcada en el mapa');
-                            vibrate([50, 50, 100, 50, 100]);
-                        }, 2000);
+                    // Spawn a crime nearby if we have GPS or fallback to map center
+                    let lat = state.myLat;
+                    let lng = state.myLng;
+                    
+                    if (!lat && map) {
+                        const center = map.getCenter();
+                        lat = center.lat;
+                        lng = center.lng;
                     }
+                    
+                    if (!lat) { lat = 40.4168; lng = -3.7038; } // Final fallback
+                    
+                    const angle = Math.random() * Math.PI * 2;
+                    const distanceDeg = (rand(200, 500) / 111320);
+                    const cLat = lat + (Math.cos(angle) * distanceDeg);
+                    const cLng = lng + (Math.sin(angle) * distanceDeg);
+                    const reward = rand(3000, 15000);
+                    
+                    state.activeCrimes.push({
+                        lat: cLat,
+                        lng: cLng,
+                        reward: reward,
+                        id: 'CRM-' + Date.now()
+                    });
+                    saveState();
+                    if (map) refreshDynamicMarkers();
+                    
+                    setTimeout(() => {
+                        showNotification('DELITO DETECTADO', 'Posible actividad criminal marcada en el mapa');
+                        vibrate([50, 50, 100, 50, 100]);
+                    }, 2000);
                 }
             }, 2500);
         });
@@ -1197,19 +1234,28 @@
         });
 
         $('#btn-track').addEventListener('click', () => {
-            if (state.myLat && state.myLng) {
-                // Spawn tracked target marker randomly within 150-300m
-                const angle = Math.random() * Math.PI * 2;
-                const distanceDeg = (rand(150, 300) / 111320); // rough meter to degree conversion
-                const tLat = state.myLat + (Math.cos(angle) * distanceDeg);
-                const tLng = state.myLng + (Math.sin(angle) * distanceDeg);
-                
-                const id = 'TRK-' + Date.now();
-                state.trackedTargets.push({ lat: tLat, lng: tLng, id });
-                saveState();
-                
-                if (map) refreshDynamicMarkers(); // update map if already loaded
+            let lat = state.myLat;
+            let lng = state.myLng;
+
+            if (!lat && map) {
+                const center = map.getCenter();
+                lat = center.lat;
+                lng = center.lng;
             }
+
+            if (!lat) { lat = 40.4168; lng = -3.7038; }
+
+            // Spawn tracked target marker randomly within 150-300m
+            const angle = Math.random() * Math.PI * 2;
+            const distanceDeg = (rand(150, 300) / 111320); // rough meter to degree conversion
+            const tLat = lat + (Math.cos(angle) * distanceDeg);
+            const tLng = lng + (Math.sin(angle) * distanceDeg);
+            
+            const id = 'TRK-' + Date.now();
+            state.trackedTargets.push({ lat: tLat, lng: tLng, id });
+            saveState();
+            
+            if (map) refreshDynamicMarkers(); // update map if already loaded
             vibrate([30, 50, 30, 50, 30]);
             showNotification('RASTREO ACTIVO', 'Ubicación del objetivo marcada en el mapa');
         });
