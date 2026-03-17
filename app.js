@@ -111,21 +111,22 @@
 
     const CARS_DATA = [
         // JDM
-        { id: 'c_jdm_r34', category: 'jdm', name: 'Nissan Skyline GT-R R34', desc: 'Clásico callejero modificado', price: 45000, income: 800 },
-        { id: 'c_jdm_supra', category: 'jdm', name: 'Toyota Supra Mk4', desc: 'Potencia turbo imparable', price: 55000, income: 1000 },
-        { id: 'c_jdm_rx7', category: 'jdm', name: 'Mazda RX-7 FD', desc: 'Motor rotativo ultraligero', price: 38000, income: 700 },
-        { id: 'c_jdm_evo', category: 'jdm', name: 'Mitsubishi Lancer Evo IX', desc: 'Tracción total rally', price: 32000, income: 600 },
+        { id: 'c_jdm_mx5', category: 'jdm', name: 'Mazda MX-5 Miata', desc: 'Diversión pura en curvas', price: 15000, income: 250, img: 'https://commons.wikimedia.org/wiki/Special:FilePath/1990_Mazda_MX-5_Miata_1.6.jpg?width=400' },
+        { id: 'c_jdm_r34', category: 'jdm', name: 'Nissan Skyline GT-R R34', desc: 'Clásico callejero modificado', price: 45000, income: 800, img: 'https://commons.wikimedia.org/wiki/Special:FilePath/NISSAN_R34-Skyline_GTR.jpg?width=400' },
+        { id: 'c_jdm_supra', category: 'jdm', name: 'Toyota Supra Mk4', desc: 'Potencia turbo imparable', price: 55000, income: 1000, img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Toyota_Supra_mk4.jpg?width=400' },
+        { id: 'c_jdm_rx7', category: 'jdm', name: 'Mazda RX-7 FD', desc: 'Motor rotativo ultraligero', price: 38000, income: 700, img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Mazda_RX-7_FD3S_front.jpg?width=400' },
+        { id: 'c_jdm_evo', category: 'jdm', name: 'Mitsubishi Lancer Evo IX', desc: 'Tracción total rally', price: 32000, income: 600, img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Mitsubishi_Lancer_Evolution_IX_front.jpg?width=400' },
         
         // Classics
-        { id: 'c_cls_mustang', category: 'classics', name: 'Ford Mustang Boss 429', desc: 'Muscle car americano puro', price: 85000, income: 1500 },
-        { id: 'c_cls_charger', category: 'classics', name: 'Dodge Charger R/T 1969', desc: 'Fuerza bruta sobre ruedas', price: 78000, income: 1300 },
-        { id: 'c_cls_911', category: 'classics', name: 'Porsche 911 Carrera RS', desc: 'Historia del automovilismo', price: 120000, income: 2500 },
+        { id: 'c_cls_mustang', category: 'classics', name: 'Ford Mustang Boss 429', desc: 'Muscle car americano puro', price: 85000, income: 1500, img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Ford_Mustang_Boss_429.jpg?width=400' },
+        { id: 'c_cls_charger', category: 'classics', name: 'Dodge Charger R/T 1969', desc: 'Fuerza bruta sobre ruedas', price: 78000, income: 1300, img: 'https://commons.wikimedia.org/wiki/Special:FilePath/1969_Dodge_Charger_RT.jpg?width=400' },
+        { id: 'c_cls_911', category: 'classics', name: 'Porsche 911 Carrera RS', desc: 'Historia del automovilismo', price: 120000, income: 2500, img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Porsche_911_Carrera_RS_2.7.jpg?width=400' },
         
         // Supercars
-        { id: 'c_sup_lambo', category: 'supercars', name: 'Lamborghini Aventador', desc: 'Bestia V12 italiana', price: 350000, income: 5000 },
-        { id: 'c_sup_p1', category: 'supercars', name: 'McLaren P1', desc: 'Híbrido hypercar extremo', price: 1200000, income: 15000 },
-        { id: 'c_sup_laferrari', category: 'supercars', name: 'LaFerrari', desc: 'Cúspide técnica aerodinámica', price: 1500000, income: 20000 },
-        { id: 'c_sup_gt3', category: 'supercars', name: 'Porsche 911 GT3 RS', desc: 'Precisión alemana en circuito', price: 280000, income: 4200 }
+        { id: 'c_sup_lambo', category: 'supercars', name: 'Lamborghini Aventador', desc: 'Bestia V12 italiana', price: 350000, income: 5000, img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Lamborghini_Aventador_LP700-4.jpg?width=400' },
+        { id: 'c_sup_p1', category: 'supercars', name: 'McLaren P1', desc: 'Híbrido hypercar extremo', price: 1200000, income: 15000, img: 'https://commons.wikimedia.org/wiki/Special:FilePath/McLaren_P1.jpg?width=400' },
+        { id: 'c_sup_laferrari', category: 'supercars', name: 'LaFerrari', desc: 'Cúspide técnica aerodinámica', price: 1500000, income: 20000, img: 'https://commons.wikimedia.org/wiki/Special:FilePath/LaFerrari_in_Beverly_Hills.jpg?width=400' },
+        { id: 'c_sup_gt3', category: 'supercars', name: 'Porsche 911 GT3 RS', desc: 'Precisión alemana en circuito', price: 280000, income: 4200, img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Porsche_911_GT3_RS_(991).jpg?width=400' }
     ];
 
     let map = null;
@@ -1464,13 +1465,8 @@
             card.className = `car-card ${isOwned ? 'owned' : ''}`;
             
             card.innerHTML = `
-                <div class="car-icon">
-                    <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M8 40 L16 24 L48 24 L56 40 L56 48 L8 48 Z"/>
-                        <circle cx="20" cy="48" r="6" fill="currentColor"/>
-                        <circle cx="44" cy="48" r="6" fill="currentColor"/>
-                        <line x1="24" y1="32" x2="40" y2="32"/>
-                    </svg>
+                <div class="car-image">
+                    <img src="${car.img}" alt="${car.name}" loading="lazy" onerror="this.src='https://placehold.co/400x300/101525/00f0ff?text=CTOS+VEHICLE'">
                 </div>
                 <div class="car-info">
                     <div class="car-name">${car.name}</div>
