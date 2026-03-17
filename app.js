@@ -92,10 +92,10 @@
     ];
 
     const CAM_DATA = [
-        { id: 'CAM-001', location: 'DISTRITO CENTRAL - CALLE 5', status: 'online' },
-        { id: 'CAM-042', location: 'ZONA INDUSTRIAL - NAVE 12', status: 'online' },
-        { id: 'CAM-107', location: 'PLAZA MAYOR - FUENTE NORTE', status: 'online' },
-        { id: 'CAM-203', location: 'PUERTO - ALMACÉN 3B', status: 'offline' },
+        { id: 'CAM-001', location: 'DISTRITO CENTRAL - CALLE 5', status: 'online', ytId: '1EiC9bvVGnk' }, // Times Square
+        { id: 'CAM-042', location: 'ZONA INDUSTRIAL - NAVE 12', status: 'online', ytId: 'Rjc5XNge1yM' }, // Miami Traffic
+        { id: 'CAM-107', location: 'PLAZA MAYOR - FUENTE NORTE', status: 'online', ytId: 'hEN7TkB5hLQ' }, // Shibuya crossing
+        { id: 'CAM-203', location: 'PUERTO - ALMACÉN 3B', status: 'offline', ytId: '' },
     ];
 
     const MAP_TYPES = {
@@ -113,6 +113,60 @@
     let dynamicMarkers = {}; // Dynamic markers indexed by ID
     let playerMarker = null;
     let watchId = null;
+
+    // ===== YOUTUBE IFRAME PLAYER =====
+    let ytPlayer = null;
+    let isYtApiReady = false;
+
+    window.onYouTubeIframeAPIReady = function() {
+        isYtApiReady = true;
+        initYouTubePlayer();
+    };
+
+    function initYouTubePlayer() {
+        if (!isYtApiReady || ytPlayer) return;
+        const container = document.getElementById('yt-player-container');
+        if (!container) return;
+
+        ytPlayer = new YT.Player('yt-player-container', {
+            height: '100%',
+            width: '100%',
+            videoId: '', 
+            playerVars: {
+                'autoplay': 1,
+                'controls': 0,
+                'disablekb': 1,
+                'fs': 0,
+                'modestbranding': 1,
+                'playsinline': 1,
+                'mute': 1,
+                'rel': 0,
+                'showinfo': 0,
+                'iv_load_policy': 3
+            },
+            events: {
+                'onReady': (event) => {
+                    event.target.mute();
+                    const cam = CAM_DATA[state.currentCam];
+                    if (cam && cam.status === 'online' && cam.ytId) {
+                        event.target.loadVideoById(cam.ytId);
+                        event.target.playVideo();
+                    }
+                }
+            }
+        });
+    }
+
+    function changeYoutubeVideo(videoId) {
+        if (ytPlayer && ytPlayer.loadVideoById) {
+            if (videoId) {
+                ytPlayer.loadVideoById(videoId);
+                ytPlayer.playVideo();
+            } else {
+                ytPlayer.stopVideo();
+            }
+        }
+    }
 
     // ===== LOCAL STORAGE =====
     function saveState() {
@@ -144,6 +198,59 @@
             console.error('Error loading save:', e);
         }
         updateStats();
+    }
+
+    // Function to calculate general spawn point
+    function getSpawnCoordinates(distMin, distMax) {
+        let lat = state.myLat;
+        let lng = state.myLng;
+
+        if (!lat && map) {
+            const center = map.getCenter();
+            lat = center.lat;
+            lng = center.lng;
+        }
+
+        if (!lat) { lat = 40.4168; lng = -3.7038; }
+
+        const angle = Math.random() * Math.PI * 2;
+        const distanceDeg = (rand(distMin, distMax) / 111320);
+        return {
+            lat: lat + (Math.cos(angle) * distanceDeg),
+            lng: lng + (Math.sin(angle) * distanceDeg)
+        };
+    }
+
+    function spawnEventCrime(minReward = 3000, maxReward = 15000) {
+        const coords = getSpawnCoordinates(200, 500);
+        const reward = rand(minReward, maxReward);
+
+        state.activeCrimes.push({
+            lat: coords.lat,
+            lng: coords.lng,
+            reward: reward,
+            id: 'CRM-' + Date.now()
+        });
+        saveState();
+        if (map) refreshDynamicMarkers();
+
+        setTimeout(() => {
+            showNotification('DELITO DETECTADO', 'Posible actividad criminal marcada en el mapa');
+            vibrate([50, 50, 100, 50, 100]);
+        }, 2000);
+    }
+
+    function spawnTrackedTargets(count = 3) {
+        for (let i = 0; i < count; i++) {
+            const coords = getSpawnCoordinates(150, 400);
+            const id = 'TRK-' + Date.now() + i;
+            state.trackedTargets.push({ lat: coords.lat, lng: coords.lng, id });
+        }
+        saveState();
+
+        if (map) refreshDynamicMarkers();
+        vibrate([30, 50, 30, 50, 30]);
+        showNotification('RASTREO MÚLTIPLE ACTIVO', `${count} nuevos objetivos sospechosos localizados`);
     }
 
     // Distance calculation (Haversine formula in meters)
@@ -578,11 +685,27 @@
                 card.querySelector('.hack-status').classList.add('complete');
 
                 state.hacks++;
-                updateStats();
 
                 if (hackType === 'blackout') {
                     triggerBlackout();
                 }
+
+                // Gamification effects
+                if (hackType === 'traffic') {
+                    spawnEventCrime();
+                } else if (hackType === 'comms') {
+                    spawnTrackedTargets();
+                } else if (hackType === 'blackout') {
+                    const amount = rand(5000, 15000);
+                    state.money += amount;
+                    setTimeout(() => showNotification('FONDOS ROBADOS', `${amount.toLocaleString('es-ES')} € recolectados durante apagón`), 4000);
+                } else {
+                    const amount = rand(500, 2000);
+                    state.money += amount;
+                    setTimeout(() => showNotification('BONIFICACIÓN', `${amount.toLocaleString('es-ES')} € extraídos`), 1500);
+                }
+
+                updateStats();
 
                 vibrate([100, 50, 100]);
                 showNotification('HACK EXITOSO', `${hackType.toUpperCase()} hackeado con éxito`);
@@ -621,11 +744,11 @@
         const isOffline = cam.status === 'offline';
 
         function draw() {
-            // Dark background
-            ctx.fillStyle = '#0a0f0a';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
             if (isOffline) {
+                // Dark background
+                ctx.fillStyle = '#0a0f0a';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
                 // Static noise for offline
                 for (let i = 0; i < 5000; i++) {
                     const x = Math.random() * canvas.width;
@@ -639,6 +762,13 @@
                 ctx.textAlign = 'center';
                 ctx.fillText('SEÑAL PERDIDA', canvas.width / 2, canvas.height / 2);
             } else {
+                // Clear the canvas to let the youtube video show through
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Keep the green hacker tint over the video
+                ctx.fillStyle = 'rgba(0, 40, 10, 0.3)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
                 // Green-tinted surveillance look
                 for (let i = 0; i < 800; i++) {
                     const x = Math.random() * canvas.width;
@@ -700,6 +830,16 @@
         $$('.cam-thumb').forEach((t, i) => {
             t.classList.toggle('active', i === state.currentCam);
         });
+
+        // Update YouTube Video
+        const ytContainer = document.getElementById('yt-player-container');
+        if (cam.status === 'online' && cam.ytId) {
+            changeYoutubeVideo(cam.ytId);
+            if (ytContainer) ytContainer.style.display = 'block';
+        } else {
+            changeYoutubeVideo('');
+            if (ytContainer) ytContainer.style.display = 'none';
+        }
     }
 
     function setupSurveillance() {
@@ -1092,37 +1232,7 @@
                     state.intercepting = false;
                     showNotification('INTERCEPCIÓN COMPLETA', 'Conversación grabada con éxito');
                     
-                    // Spawn a crime nearby if we have GPS or fallback to map center
-                    let lat = state.myLat;
-                    let lng = state.myLng;
-                    
-                    if (!lat && map) {
-                        const center = map.getCenter();
-                        lat = center.lat;
-                        lng = center.lng;
-                    }
-                    
-                    if (!lat) { lat = 40.4168; lng = -3.7038; } // Final fallback
-                    
-                    const angle = Math.random() * Math.PI * 2;
-                    const distanceDeg = (rand(200, 500) / 111320);
-                    const cLat = lat + (Math.cos(angle) * distanceDeg);
-                    const cLng = lng + (Math.sin(angle) * distanceDeg);
-                    const reward = rand(3000, 15000);
-                    
-                    state.activeCrimes.push({
-                        lat: cLat,
-                        lng: cLng,
-                        reward: reward,
-                        id: 'CRM-' + Date.now()
-                    });
-                    saveState();
-                    if (map) refreshDynamicMarkers();
-                    
-                    setTimeout(() => {
-                        showNotification('DELITO DETECTADO', 'Posible actividad criminal marcada en el mapa');
-                        vibrate([50, 50, 100, 50, 100]);
-                    }, 2000);
+                    spawnEventCrime(3000, 15000);
                 }
             }, 2500);
         });
@@ -1196,6 +1306,9 @@
         if (hackEl) hackEl.textContent = state.hacks;
         if (profEl) profEl.textContent = state.profiles;
         if (moneyEl) moneyEl.textContent = state.money.toLocaleString('es-ES');
+
+        const globalMoney = $('#global-money');
+        if (globalMoney) globalMoney.textContent = state.money.toLocaleString('es-ES');
 
         // System page too
         const sh = $('#sys-hacks-total');

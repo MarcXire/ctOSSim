@@ -75,6 +75,7 @@
                 <span id="status-time" class="status-time"></span>
             </div>
             <div class="status-right">
+                <span class="status-money">€ <span id="global-money">0</span></span>
                 <span class="battery-icon">
                     <span class="battery-level"></span>
                 </span>
@@ -381,6 +382,7 @@
         </div>
         <div class="surveillance-container">
             <div class="camera-main" id="surveillance-feed">
+                <div id="yt-player-container"></div>
                 <canvas id="surveillance-canvas"></canvas>
                 <div class="cam-overlay">
                     <div class="cam-info-top">
@@ -555,6 +557,7 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
     <script src="app.js"></script>
 </body>
 
