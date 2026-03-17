@@ -20,7 +20,8 @@
         myLng: null,
         customMarkers: [], // Array of {lat, lng, type, title, id}
         trackedTargets: [], // Array of {lat, lng, id}
-        activeCrimes: []    // Array of {lat, lng, id, reward}
+        activeCrimes: [],   // Array of {lat, lng, id, reward}
+        ownedCars: []       // Array of car string IDs
     };
 
     // ===== DATA =====
@@ -92,9 +93,9 @@
     ];
 
     const CAM_DATA = [
-        { id: 'CAM-001', location: 'DISTRITO CENTRAL - CALLE 5', status: 'online', ytId: '1EiC9bvVGnk' }, // Times Square
-        { id: 'CAM-042', location: 'ZONA INDUSTRIAL - NAVE 12', status: 'online', ytId: 'Rjc5XNge1yM' }, // Miami Traffic
-        { id: 'CAM-107', location: 'PLAZA MAYOR - FUENTE NORTE', status: 'online', ytId: 'hEN7TkB5hLQ' }, // Shibuya crossing
+        { id: 'CAM-001', location: 'NUEVA YORK - TIMES SQUARE', status: 'online', ytId: '1EiC9bvVGnk' },
+        { id: 'CAM-042', location: 'TOKIO - SHIBUYA CROSSING', status: 'online', ytId: 'coYw-eVU0Ks' },
+        { id: 'CAM-107', location: 'VENECIA - GRAN CANAL', status: 'online', ytId: 'HkuZmbVsgF4' },
         { id: 'CAM-203', location: 'PUERTO - ALMACÉN 3B', status: 'offline', ytId: '' },
     ];
 
@@ -107,6 +108,25 @@
         tracked: { color: '#ff9500', name: 'OBJETIVO RASTREADO' },
         custom: { color: '#00f0ff', name: 'WAYPOINT' }
     };
+
+    const CARS_DATA = [
+        // JDM
+        { id: 'c_jdm_r34', category: 'jdm', name: 'Nissan Skyline GT-R R34', desc: 'Clásico callejero modificado', price: 45000, income: 800 },
+        { id: 'c_jdm_supra', category: 'jdm', name: 'Toyota Supra Mk4', desc: 'Potencia turbo imparable', price: 55000, income: 1000 },
+        { id: 'c_jdm_rx7', category: 'jdm', name: 'Mazda RX-7 FD', desc: 'Motor rotativo ultraligero', price: 38000, income: 700 },
+        { id: 'c_jdm_evo', category: 'jdm', name: 'Mitsubishi Lancer Evo IX', desc: 'Tracción total rally', price: 32000, income: 600 },
+        
+        // Classics
+        { id: 'c_cls_mustang', category: 'classics', name: 'Ford Mustang Boss 429', desc: 'Muscle car americano puro', price: 85000, income: 1500 },
+        { id: 'c_cls_charger', category: 'classics', name: 'Dodge Charger R/T 1969', desc: 'Fuerza bruta sobre ruedas', price: 78000, income: 1300 },
+        { id: 'c_cls_911', category: 'classics', name: 'Porsche 911 Carrera RS', desc: 'Historia del automovilismo', price: 120000, income: 2500 },
+        
+        // Supercars
+        { id: 'c_sup_lambo', category: 'supercars', name: 'Lamborghini Aventador', desc: 'Bestia V12 italiana', price: 350000, income: 5000 },
+        { id: 'c_sup_p1', category: 'supercars', name: 'McLaren P1', desc: 'Híbrido hypercar extremo', price: 1200000, income: 15000 },
+        { id: 'c_sup_laferrari', category: 'supercars', name: 'LaFerrari', desc: 'Cúspide técnica aerodinámica', price: 1500000, income: 20000 },
+        { id: 'c_sup_gt3', category: 'supercars', name: 'Porsche 911 GT3 RS', desc: 'Precisión alemana en circuito', price: 280000, income: 4200 }
+    ];
 
     let map = null;
     let mapMarkers = []; // Static markers
@@ -176,10 +196,12 @@
             money: state.money,
             customMarkers: state.customMarkers,
             trackedTargets: state.trackedTargets,
-            activeCrimes: state.activeCrimes
+            activeCrimes: state.activeCrimes,
+            ownedCars: state.ownedCars
         };
         localStorage.setItem('ctos_save', JSON.stringify(data));
         updateStats();
+        updateStoreUI();
     }
 
     function loadState() {
@@ -193,6 +215,7 @@
                 state.customMarkers = parsed.customMarkers || [];
                 state.trackedTargets = parsed.trackedTargets || [];
                 state.activeCrimes = parsed.activeCrimes || [];
+                state.ownedCars = parsed.ownedCars || [];
             }
         } catch (e) {
             console.error('Error loading save:', e);
@@ -484,6 +507,7 @@
                 if (screen === 'surveillance') initSurveillance();
                 if (screen === 'map') initMap();
                 if (screen === 'audio') initAudio();
+                if (screen === 'store') populateStore('jdm');
             });
         });
 
@@ -709,6 +733,14 @@
 
                 vibrate([100, 50, 100]);
                 showNotification('HACK EXITOSO', `${hackType.toUpperCase()} hackeado con éxito`);
+
+                // Add a cooldown so it can be hacked again
+                setTimeout(() => {
+                    card.classList.remove('hacked', 'hacking');
+                    card.querySelector('.hack-status').textContent = 'DISPONIBLE';
+                    card.querySelector('.hack-status').className = 'hack-status';
+                    card.querySelector('.hack-fill').style.width = '0%';
+                }, 30000); // 30 seconds cooldown
             }
         }, 400);
     }
@@ -1374,6 +1406,123 @@
         });
     }
 
+    // ===== STORE / BLACK MARKET =====
+    function setupStore() {
+        $$('.store-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                $$('.store-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                vibrate(15);
+                populateStore(tab.dataset.category);
+            });
+        });
+
+        // Passive Income Loop (every 10s)
+        setInterval(() => {
+            if (state.ownedCars.length > 0) {
+                let totalIncome = 0;
+                state.ownedCars.forEach(carId => {
+                    const car = CARS_DATA.find(c => c.id === carId);
+                    if (car) totalIncome += parseInt(car.income) / 6; // Income per 10s instead of per min
+                });
+                
+                if (totalIncome > 0) {
+                    state.money += Math.floor(totalIncome);
+                    updateStats();
+                    updateStoreUI();
+                }
+            }
+        }, 10000); // 10s
+    }
+
+    function getPassiveIncomePerMin() {
+        let total = 0;
+        state.ownedCars.forEach(carId => {
+            const car = CARS_DATA.find(c => c.id === carId);
+            if (car) total += car.income;
+        });
+        return total;
+    }
+
+    function updateStoreUI() {
+        const incomeEl = $('#store-passive-income');
+        const moneyEl = $('#store-current-money');
+        if (incomeEl) incomeEl.textContent = getPassiveIncomePerMin().toLocaleString('es-ES') + ' € / min';
+        if (moneyEl) moneyEl.textContent = state.money.toLocaleString('es-ES') + ' €';
+    }
+
+    function populateStore(category) {
+        const grid = $('#store-grid');
+        grid.innerHTML = '';
+        updateStoreUI();
+
+        const filteredCars = CARS_DATA.filter(c => c.category === category);
+
+        filteredCars.forEach(car => {
+            const isOwned = state.ownedCars.includes(car.id);
+            const card = document.createElement('div');
+            card.className = `car-card ${isOwned ? 'owned' : ''}`;
+            
+            card.innerHTML = `
+                <div class="car-icon">
+                    <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M8 40 L16 24 L48 24 L56 40 L56 48 L8 48 Z"/>
+                        <circle cx="20" cy="48" r="6" fill="currentColor"/>
+                        <circle cx="44" cy="48" r="6" fill="currentColor"/>
+                        <line x1="24" y1="32" x2="40" y2="32"/>
+                    </svg>
+                </div>
+                <div class="car-info">
+                    <div class="car-name">${car.name}</div>
+                    <div class="car-desc">${car.desc}</div>
+                    <div class="car-stats">
+                        <span class="car-price">VALOR: ${car.price.toLocaleString('es-ES')} €</span>
+                        <span class="car-income">PASIVO: ${car.income.toLocaleString('es-ES')} €/m</span>
+                    </div>
+                </div>
+                <button class="car-buy-btn" data-id="${car.id}">
+                    ${isOwned ? 'EN GARAGE' : 'COMPRAR'}
+                </button>
+            `;
+            grid.appendChild(card);
+        });
+
+        // Setup buy buttons
+        grid.querySelectorAll('.car-buy-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = e.target.dataset.id;
+                buyCar(id);
+            });
+        });
+    }
+
+    function buyCar(carId) {
+        if (state.ownedCars.includes(carId)) {
+            showNotification('VEHÍCULO ADQUIRIDO', 'Ya tienes este vehículo en tu garage.');
+            vibrate(20);
+            return;
+        }
+
+        const car = CARS_DATA.find(c => c.id === carId);
+        if (!car) return;
+
+        if (state.money >= car.price) {
+            state.money -= car.price;
+            state.ownedCars.push(car.id);
+            saveState();
+            
+            vibrate([50, 30, 100, 30, 200]);
+            showNotification('COMPRA REALIZADA', `${car.name} añadido a tu garage clandestino.`);
+            
+            // Re-render the tab
+            const activeTab = document.querySelector('.store-tab.active');
+            if (activeTab) populateStore(activeTab.dataset.category);
+        } else {
+            vibrate([30, 10, 30, 10, 30]);
+            showNotification('FONDOS INSUFICIENTES', `Necesitas ${car.price.toLocaleString('es-ES')} € para adquirir este vehículo.`);
+        }
+    }
+
     // ===== INIT =====
     function init() {
         loadState();
@@ -1382,6 +1531,7 @@
         setupSurveillance();
         setupAudio();
         setupSystem();
+        setupStore();
         setupProfilerActions();
         updateStats();
 

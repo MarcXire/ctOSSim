@@ -197,6 +197,19 @@
                     <span class="hub-btn-label">SISTEMA</span>
                     <span class="hub-btn-sub">Config ctOS</span>
                 </button>
+
+                <button class="hub-btn highlight-btn" data-screen="store" id="btn-store">
+                    <div class="hub-btn-icon">
+                        <svg viewBox="0 0 64 64">
+                            <path d="M12 40 L20 20 L44 20 L52 40 L52 52 L12 52 Z" fill="none" stroke="currentColor" stroke-width="2" />
+                            <circle cx="20" cy="46" r="4" fill="currentColor" />
+                            <circle cx="44" cy="46" r="4" fill="currentColor" />
+                            <line x1="24" y1="28" x2="40" y2="28" stroke="currentColor" stroke-width="2" />
+                        </svg>
+                    </div>
+                    <span class="hub-btn-label">VEHÍCULOS</span>
+                    <span class="hub-btn-sub">Mercado Negro</span>
+                </button>
             </div>
         </div>
     </section>
@@ -295,7 +308,7 @@
                     <div class="hack-icon">🚦</div>
                     <div class="hack-info">
                         <h3>SEMÁFOROS</h3>
-                        <p>Controlar semáforos del distrito</p>
+                        <p>Genera delitos cercanos de alta recompensa</p>
                     </div>
                     <div class="hack-status">DISPONIBLE</div>
                     <div class="hack-progress-bar">
@@ -306,7 +319,7 @@
                     <div class="hack-icon">🚧</div>
                     <div class="hack-info">
                         <h3>BARRERAS</h3>
-                        <p>Activar/desactivar barreras viales</p>
+                        <p>Intercepta furgones ciegos y gana fondos líquidos</p>
                     </div>
                     <div class="hack-status">DISPONIBLE</div>
                     <div class="hack-progress-bar">
@@ -317,7 +330,7 @@
                     <div class="hack-icon">⚡</div>
                     <div class="hack-info">
                         <h3>APAGÓN</h3>
-                        <p>Corte de energía en toda la zona</p>
+                        <p>Apaga la red y roba cajeros masivamente</p>
                     </div>
                     <div class="hack-status">DISPONIBLE</div>
                     <div class="hack-progress-bar">
@@ -328,7 +341,7 @@
                     <div class="hack-icon">💧</div>
                     <div class="hack-info">
                         <h3>TUBERÍAS</h3>
-                        <p>Reventar tuberías de agua</p>
+                        <p>Extorsiona al estado por daños en la red hidráulica</p>
                     </div>
                     <div class="hack-status">DISPONIBLE</div>
                     <div class="hack-progress-bar">
@@ -339,7 +352,7 @@
                     <div class="hack-icon">📡</div>
                     <div class="hack-info">
                         <h3>COMUNICACIONES</h3>
-                        <p>Interferir señales de radio</p>
+                        <p>Revela múltiples objetivos en el mapa</p>
                     </div>
                     <div class="hack-status">DISPONIBLE</div>
                     <div class="hack-progress-bar">
@@ -350,7 +363,7 @@
                     <div class="hack-icon">🔒</div>
                     <div class="hack-info">
                         <h3>CERRADURAS</h3>
-                        <p>Desbloquear puertas electrónicas</p>
+                        <p>Accede a cajas fuertes electrónicas cercanas</p>
                     </div>
                     <div class="hack-status">DISPONIBLE</div>
                     <div class="hack-progress-bar">
@@ -542,6 +555,32 @@
                 <h3>ACCIONES</h3>
                 <button class="sys-btn danger" id="btn-reset">⚠ REINICIAR SISTEMA</button>
                 <button class="sys-btn" id="btn-clear-data">BORRAR DATOS</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================== STORE SCREEN ===================== -->
+    <section id="screen-store" class="screen">
+        <div class="screen-header">
+            <button class="back-btn" data-screen="hub">◂ VOLVER</button>
+            <h2>MERCADO NEGRO</h2>
+            <span class="header-tag">VEHÍCULOS</span>
+        </div>
+        
+        <div class="store-tabs">
+            <button class="store-tab active" data-category="jdm">JDM</button>
+            <button class="store-tab" data-category="classics">CLÁSICOS</button>
+            <button class="store-tab" data-category="supercars">SUPERDEPORTIVOS</button>
+        </div>
+
+        <div class="store-container">
+            <div id="store-stats-bar">
+                <span>INGRESO PASIVO: <span id="store-passive-income" class="green-text">0 € / min</span></span>
+                <span>FONDOS: <span id="store-current-money" class="cyan-text">0</span></span>
+            </div>
+            
+            <div class="store-grid" id="store-grid">
+                <!-- Javascript will inject car cards here -->
             </div>
         </div>
     </section>
