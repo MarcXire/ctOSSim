@@ -92,16 +92,15 @@
         { id: 'CAM-203', location: 'PUERTO - ALMACÉN 3B', status: 'offline' },
     ];
 
-    const MAP_TARGETS = [
-        { x: 0.2, y: 0.3, type: 'node', name: 'NODO ctOS #1', desc: 'Centro de datos principal' },
-        { x: 0.6, y: 0.2, type: 'camera', name: 'CLUSTER CÁMARAS A', desc: '12 cámaras activas' },
-        { x: 0.8, y: 0.6, type: 'alert', name: 'ZONA RESTRINGIDA', desc: 'Seguridad nivel 4' },
-        { x: 0.4, y: 0.7, type: 'target', name: 'OBJETIVO PRINCIPAL', desc: 'Servidor central ctOS' },
-        { x: 0.15, y: 0.65, type: 'node', name: 'NODO ctOS #2', desc: 'Subestación eléctrica' },
-        { x: 0.7, y: 0.4, type: 'camera', name: 'CLUSTER CÁMARAS B', desc: '8 cámaras activas' },
-        { x: 0.5, y: 0.5, type: 'target', name: 'ROUTER PRINCIPAL', desc: 'Backbone de red' },
-        { x: 0.35, y: 0.15, type: 'alert', name: 'COMISARÍA', desc: 'Comunicaciones policiales' },
-    ];
+    const MAP_TYPES = {
+        node: { color: '#00ff41', name: 'NODO ctOS' },
+        camera: { color: '#00f0ff', name: 'CÁMARA' },
+        alert: { color: '#ff2d55', name: 'ALERTA' },
+        target: { color: '#ffcc00', name: 'OBJETIVO' }
+    };
+
+    let map = null;
+    let mapMarkers = [];
 
     const CONVERSATIONS = [
         [
@@ -674,208 +673,113 @@
         });
     }
 
-    // ===== MAP =====
+    // ===== REAL MAP (LEAFLET) =====
     function initMap() {
-        drawMap();
+        if (map) return; // Already initialized
+
+        // Default to Madrid if geolocation fails
+        const defaultLat = 40.4168;
+        const defaultLng = -3.7038;
+
+        map = L.map('map-leaflet', {
+            zoomControl: true,
+            attributionControl: true
+        }).setView([defaultLat, defaultLng], 15);
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap &copy; CARTO',
+            subdomains: 'abcd',
+            maxZoom: 20
+        }).addTo(map);
+
+        // Try to get real location
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const { latitude, longitude } = pos.coords;
+                    map.setView([latitude, longitude], 15);
+                    updateCoordsLabel(latitude, longitude);
+                    seedCtosMarkers(latitude, longitude);
+                    
+                    // Add player marker
+                    const playerIcon = L.divIcon({
+                        className: 'ctos-marker',
+                        html: '<div class="marker-pin" style="background:#00f0ff; width:16px; height:16px; border:2px solid #fff; box-shadow:0 0 15px #00f0ff"></div>',
+                        iconSize: [20, 20]
+                    });
+                    L.marker([latitude, longitude], { icon: playerIcon }).addTo(map);
+                },
+                (err) => {
+                    console.warn('Geolocation error:', err);
+                    seedCtosMarkers(defaultLat, defaultLng);
+                }
+            );
+        } else {
+            seedCtosMarkers(defaultLat, defaultLng);
+        }
+
+        // Map events
+        map.on('move', () => {
+            const center = map.getCenter();
+            updateCoordsLabel(center.lat, center.lng);
+        });
     }
 
-    function drawMap() {
-        const canvas = $('#map-canvas');
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        const rect = canvas.parentElement.getBoundingClientRect();
-        canvas.width = rect.width * 2;
-        canvas.height = rect.height * 2;
-        canvas.style.width = rect.width + 'px';
-        canvas.style.height = rect.height + 'px';
-        const w = canvas.width;
-        const h = canvas.height;
-
-        let animFrame;
-        let selectedTarget = null;
-
-        function draw() {
-            const time = Date.now() * 0.001;
-
-            // Background
-            ctx.fillStyle = '#060810';
-            ctx.fillRect(0, 0, w, h);
-
-            // Grid
-            ctx.strokeStyle = 'rgba(0, 240, 255, 0.04)';
-            ctx.lineWidth = 1;
-            const gridSize = 40;
-            for (let x = 0; x < w; x += gridSize) {
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, h);
-                ctx.stroke();
-            }
-            for (let y = 0; y < h; y += gridSize) {
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(w, y);
-                ctx.stroke();
-            }
-
-            // Roads (random lines)
-            ctx.strokeStyle = 'rgba(0, 240, 255, 0.08)';
-            ctx.lineWidth = 3;
-            // Horizontal roads
-            [0.25, 0.45, 0.65, 0.85].forEach(yp => {
-                ctx.beginPath();
-                ctx.moveTo(0, h * yp);
-                ctx.lineTo(w, h * yp);
-                ctx.stroke();
-            });
-            // Vertical roads
-            [0.15, 0.35, 0.55, 0.75, 0.9].forEach(xp => {
-                ctx.beginPath();
-                ctx.moveTo(w * xp, 0);
-                ctx.lineTo(w * xp, h);
-                ctx.stroke();
-            });
-
-            // Blocks (buildings)
-            ctx.fillStyle = 'rgba(0, 240, 255, 0.03)';
-            ctx.strokeStyle = 'rgba(0, 240, 255, 0.06)';
-            ctx.lineWidth = 1;
-            const blocks = [
-                [0.02, 0.02, 0.12, 0.2], [0.17, 0.02, 0.16, 0.2],
-                [0.37, 0.02, 0.16, 0.2], [0.57, 0.02, 0.16, 0.2],
-                [0.02, 0.28, 0.12, 0.15], [0.17, 0.28, 0.16, 0.15],
-                [0.37, 0.28, 0.16, 0.15], [0.57, 0.28, 0.16, 0.15],
-                [0.77, 0.02, 0.21, 0.35], [0.02, 0.48, 0.31, 0.15],
-                [0.37, 0.48, 0.16, 0.15], [0.57, 0.48, 0.31, 0.15],
-                [0.02, 0.68, 0.31, 0.15], [0.37, 0.68, 0.36, 0.15],
-                [0.77, 0.48, 0.21, 0.35],
-                [0.02, 0.88, 0.31, 0.1], [0.37, 0.88, 0.36, 0.1],
-                [0.77, 0.88, 0.21, 0.1],
-            ];
-            blocks.forEach(b => {
-                ctx.fillRect(w * b[0], h * b[1], w * b[2], h * b[3]);
-                ctx.strokeRect(w * b[0], h * b[1], w * b[2], h * b[3]);
-            });
-
-            // Data flow lines (animated)
-            ctx.strokeStyle = 'rgba(0, 240, 255, 0.15)';
-            ctx.lineWidth = 1;
-            ctx.setLineDash([4, 8]);
-            ctx.lineDashOffset = -time * 30;
-            for (let i = 0; i < MAP_TARGETS.length - 1; i++) {
-                const a = MAP_TARGETS[i];
-                const b = MAP_TARGETS[i + 1];
-                ctx.beginPath();
-                ctx.moveTo(a.x * w, a.y * h);
-                ctx.lineTo(b.x * w, b.y * h);
-                ctx.stroke();
-            }
-            ctx.setLineDash([]);
-
-            // Targets
-            MAP_TARGETS.forEach((t, idx) => {
-                const tx = t.x * w;
-                const ty = t.y * h;
-                let color;
-                switch (t.type) {
-                    case 'node': color = '#00ff41'; break;
-                    case 'camera': color = '#00f0ff'; break;
-                    case 'alert': color = '#ff2d55'; break;
-                    case 'target': color = '#ffcc00'; break;
-                    default: color = '#00f0ff';
-                }
-
-                // Outer pulse
-                const pulseR = 12 + Math.sin(time * 2 + idx) * 4;
-                ctx.beginPath();
-                ctx.arc(tx, ty, pulseR, 0, Math.PI * 2);
-                ctx.fillStyle = color.replace(')', ', 0.15)').replace('rgb', 'rgba').replace('#', '');
-                ctx.strokeStyle = color;
-                ctx.lineWidth = 1;
-                // Convert hex to rgba for fill
-                const r = parseInt(color.slice(1,3),16);
-                const g = parseInt(color.slice(3,5),16);
-                const b2 = parseInt(color.slice(5,7),16);
-                ctx.fillStyle = `rgba(${r},${g},${b2},0.15)`;
-                ctx.fill();
-                ctx.stroke();
-
-                // Inner dot
-                ctx.beginPath();
-                ctx.arc(tx, ty, 4, 0, Math.PI * 2);
-                ctx.fillStyle = color;
-                ctx.fill();
-
-                // Label
-                ctx.font = '11px "Share Tech Mono"';
-                ctx.fillStyle = color;
-                ctx.textAlign = 'center';
-                ctx.fillText(t.name, tx, ty - 18);
-            });
-
-            // Player position (radar ping)
-            const playerX = w * 0.5;
-            const playerY = h * 0.5;
-            const pingR = (time * 40) % 80;
-            ctx.beginPath();
-            ctx.arc(playerX, playerY, pingR, 0, Math.PI * 2);
-            ctx.strokeStyle = `rgba(0, 240, 255, ${Math.max(0, 1 - pingR / 80) * 0.4})`;
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            // Player dot
-            ctx.beginPath();
-            ctx.arc(playerX, playerY, 6, 0, Math.PI * 2);
-            ctx.fillStyle = '#00f0ff';
-            ctx.fill();
-            ctx.beginPath();
-            ctx.arc(playerX, playerY, 10, 0, Math.PI * 2);
-            ctx.strokeStyle = 'rgba(0, 240, 255, 0.5)';
-            ctx.lineWidth = 1;
-            ctx.stroke();
-
-            if (state.currentScreen === 'map') {
-                animFrame = requestAnimationFrame(draw);
-            }
+    function updateCoordsLabel(lat, lng) {
+        const coordsEl = $('#map-coords');
+        if (coordsEl) {
+            coordsEl.textContent = `LAT: ${lat.toFixed(4)} LON: ${lng.toFixed(4)}`;
         }
-        draw();
+    }
 
-        // Touch/click on map
-        canvas.addEventListener('click', (e) => {
-            const rect2 = canvas.getBoundingClientRect();
-            const cx = (e.clientX - rect2.left) / rect2.width;
-            const cy = (e.clientY - rect2.top) / rect2.height;
+    function seedCtosMarkers(lat, lng) {
+        // Clear old markers if any
+        mapMarkers.forEach(m => map.removeLayer(m));
+        mapMarkers = [];
 
-            let closest = null;
-            let minDist = 0.08;
-            MAP_TARGETS.forEach(t => {
-                const dist = Math.hypot(t.x - cx, t.y - cy);
-                if (dist < minDist) {
-                    minDist = dist;
-                    closest = t;
-                }
+        const types = ['node', 'camera', 'alert', 'target'];
+        const descriptions = [
+            'Nodo de conexión local ctOS',
+            'Cámara de vigilancia de alta resolución',
+            'Punto de acceso restringido detectado',
+            'Servidor central de datos municipales',
+            'Subestación eléctrica hackeable',
+            'Repetidor de comunicaciones'
+        ];
+
+        for (let i = 0; i < 12; i++) {
+            const mLat = lat + (Math.random() - 0.5) * 0.015;
+            const mLng = lng + (Math.random() - 0.5) * 0.015;
+            const type = pick(types);
+            const style = MAP_TYPES[type];
+            
+            const icon = L.divIcon({
+                className: 'ctos-marker',
+                html: `<div class="marker-pin" style="background:${style.color}; border:1.5px solid #fff;"></div><div class="marker-label">${style.name}</div>`,
+                iconSize: [12, 12],
+                iconAnchor: [6, 6]
             });
 
-            const info = $('#map-target-info');
-            if (closest) {
-                $('#map-target-name').textContent = closest.name;
-                $('#map-target-desc').textContent = closest.desc;
+            const marker = L.marker([mLat, mLng], { icon: icon }).addTo(map);
+            marker.on('click', () => {
+                const info = $('#map-target-info');
+                $('#map-target-name').textContent = style.name + ' #' + rand(100, 999);
+                $('#map-target-desc').textContent = pick(descriptions);
                 info.classList.remove('hidden');
                 vibrate(20);
-            } else {
-                info.classList.add('hidden');
-            }
-        });
-
-        // Map hack button
-        $('#map-hack-btn').addEventListener('click', () => {
-            state.hacks++;
-            updateStats();
-            vibrate([50, 30, 80]);
-            showNotification('NODO HACKEADO', 'Acceso total al nodo conseguido');
-            $('#map-target-info').classList.add('hidden');
-        });
+            });
+            mapMarkers.push(marker);
+        }
     }
+
+    // Map hack button (keep existing listener but hide info)
+    $('#map-hack-btn').addEventListener('click', () => {
+        state.hacks++;
+        updateStats();
+        vibrate([50, 30, 80]);
+        showNotification('NODO HACKEADO', 'Acceso total al nodo conseguido');
+        $('#map-target-info').classList.add('hidden');
+    });
 
     // ===== AUDIO =====
     function initAudio() {

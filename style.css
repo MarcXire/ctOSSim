@@ -1094,10 +1094,66 @@ html, body {
     overflow: hidden;
 }
 
-#map-canvas {
+#map-leaflet {
     width: 100%;
     height: 100%;
-    display: block;
+    background: #060810;
+}
+
+/* ctOS MAP THEME FILTERS */
+.leaflet-tile-container {
+    filter: invert(100%) hue-rotate(180deg) brightness(1.2) contrast(1.1) saturate(0.5);
+}
+
+.leaflet-container {
+    background: #060810 !important;
+}
+
+.leaflet-bar {
+    border: 1px solid var(--cyan) !important;
+    background: var(--bg-card) !important;
+}
+
+.leaflet-bar a {
+    background: var(--bg-card) !important;
+    color: var(--cyan) !important;
+    border-bottom: 1px solid var(--border) !important;
+}
+
+.leaflet-control-attribution {
+    background: rgba(0, 0, 0, 0.7) !important;
+    color: var(--text-secondary) !important;
+    font-family: var(--font-mono) !important;
+    font-size: 0.5rem !important;
+}
+
+/* CUSTOM MARKERS */
+.ctos-marker {
+    background: none;
+    border: none;
+}
+
+.marker-pin {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    position: relative;
+    border: 2px solid #fff;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.marker-label {
+    position: absolute;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    font-family: var(--font-mono);
+    font-size: 0.55rem;
+    padding: 1px 4px;
+    background: rgba(10, 10, 15, 0.8);
+    border: 1px solid rgba(0, 240, 255, 0.3);
+    color: var(--text-primary);
 }
 
 .map-overlay-info {

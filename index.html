@@ -10,6 +10,7 @@
     <title>ctOS // MOBILE INTERFACE</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -362,7 +363,7 @@
             <span class="header-tag">RED</span>
         </div>
         <div class="map-container">
-            <canvas id="map-canvas"></canvas>
+            <div id="map-leaflet"></div>
             <div class="map-overlay-info">
                 <div class="map-legend">
                     <div class="legend-item"><span class="legend-dot green"></span> NODO ACTIVO</div>
@@ -477,6 +478,7 @@
         </div>
     </div>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="app.js"></script>
 </body>
 </html>
