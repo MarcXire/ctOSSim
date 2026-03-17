@@ -9,12 +9,18 @@
         currentScreen: 'boot',
         hacks: 0,
         profiles: 0,
+        money: 0,
         cameras: 0,
         startTime: Date.now(),
         currentCam: 0,
         audioFreq: 142.7,
         intercepting: false,
         cameraStream: null,
+        myLat: null,
+        myLng: null,
+        customMarkers: [], // Array of {lat, lng, type, title, id}
+        trackedTargets: [], // Array of {lat, lng, id}
+        activeCrimes: []    // Array of {lat, lng, id, reward}
     };
 
     // ===== DATA =====
@@ -96,11 +102,64 @@
         node: { color: '#00ff41', name: 'NODO ctOS' },
         camera: { color: '#00f0ff', name: 'CÁMARA' },
         alert: { color: '#ff2d55', name: 'ALERTA' },
-        target: { color: '#ffcc00', name: 'OBJETIVO' }
+        target: { color: '#ffcc00', name: 'OBJETIVO' },
+        crime: { color: '#ff0000', name: 'DELITO EN CURSO' },
+        tracked: { color: '#ff9500', name: 'OBJETIVO RASTREADO' },
+        custom: { color: '#00f0ff', name: 'WAYPOINT' }
     };
 
     let map = null;
-    let mapMarkers = [];
+    let mapMarkers = []; // Static markers
+    let dynamicMarkers = {}; // Dynamic markers indexed by ID
+    let playerMarker = null;
+    let watchId = null;
+
+    // ===== LOCAL STORAGE =====
+    function saveState() {
+        const data = {
+            hacks: state.hacks,
+            profiles: state.profiles,
+            money: state.money,
+            customMarkers: state.customMarkers,
+            trackedTargets: state.trackedTargets,
+            activeCrimes: state.activeCrimes
+        };
+        localStorage.setItem('ctos_save', JSON.stringify(data));
+        updateStats();
+    }
+
+    function loadState() {
+        try {
+            const data = localStorage.getItem('ctos_save');
+            if (data) {
+                const parsed = JSON.parse(data);
+                state.hacks = parsed.hacks || 0;
+                state.profiles = parsed.profiles || 0;
+                state.money = parsed.money || 0;
+                state.customMarkers = parsed.customMarkers || [];
+                state.trackedTargets = parsed.trackedTargets || [];
+                state.activeCrimes = parsed.activeCrimes || [];
+            }
+        } catch (e) {
+            console.error('Error loading save:', e);
+        }
+        updateStats();
+    }
+
+    // Distance calculation (Haversine formula in meters)
+    function getDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371e3; // Earth radius in meters
+        const φ1 = lat1 * Math.PI / 180;
+        const φ2 = lat2 * Math.PI / 180;
+        const Δφ = (lat2 - lat1) * Math.PI / 180;
+        const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+        const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                  Math.cos(φ1) * Math.cos(φ2) *
+                  Math.sin(Δλ/2) * Math.sin(Δλ/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c; 
+    }
 
     const CONVERSATIONS = [
         [
@@ -236,6 +295,12 @@
         if (target) {
             target.classList.add('active');
             state.currentScreen = name;
+            
+            // Fix Leaflet map sizing issue when unhiding container
+            if (name === 'map' && map) {
+                setTimeout(() => map.invalidateSize(), 100);
+            }
+            
             vibrate(30);
         }
     }
@@ -692,27 +757,39 @@
             maxZoom: 20
         }).addTo(map);
 
-        // Try to get real location
+        // Initial setup
         if (navigator.geolocation) {
+            // Get initial position quickly
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
                     const { latitude, longitude } = pos.coords;
-                    map.setView([latitude, longitude], 15);
+                    state.myLat = latitude;
+                    state.myLng = longitude;
+                    map.setView([latitude, longitude], 16);
                     updateCoordsLabel(latitude, longitude);
                     seedCtosMarkers(latitude, longitude);
-                    
-                    // Add player marker
-                    const playerIcon = L.divIcon({
-                        className: 'ctos-marker',
-                        html: '<div class="marker-pin" style="background:#00f0ff; width:16px; height:16px; border:2px solid #fff; box-shadow:0 0 15px #00f0ff"></div>',
-                        iconSize: [20, 20]
-                    });
-                    L.marker([latitude, longitude], { icon: playerIcon }).addTo(map);
+                    updatePlayerMarker(latitude, longitude);
+                    refreshDynamicMarkers();
                 },
                 (err) => {
                     console.warn('Geolocation error:', err);
                     seedCtosMarkers(defaultLat, defaultLng);
-                }
+                },
+                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+            );
+
+            // Continuously track position (Pokemon GO style)
+            watchId = navigator.geolocation.watchPosition(
+                (pos) => {
+                    const { latitude, longitude } = pos.coords;
+                    state.myLat = latitude;
+                    state.myLng = longitude;
+                    updateCoordsLabel(latitude, longitude);
+                    updatePlayerMarker(latitude, longitude);
+                    checkProximity();
+                },
+                (err) => console.warn('Watch error:', err),
+                { enableHighAccuracy: true, maximumAge: 5000 }
             );
         } else {
             seedCtosMarkers(defaultLat, defaultLng);
@@ -723,17 +800,119 @@
             const center = map.getCenter();
             updateCoordsLabel(center.lat, center.lng);
         });
+
+        // Add custom markers on long press / double click
+        map.on('dblclick', (e) => {
+            const id = 'WP-' + Date.now();
+            state.customMarkers.push({
+                lat: e.latlng.lat,
+                lng: e.latlng.lng,
+                type: 'custom',
+                title: 'WAYPOINT PERSONAL',
+                id: id
+            });
+            saveState();
+            refreshDynamicMarkers();
+            vibrate(50);
+            showNotification('WAYPOINT FIJADO', 'Coordenadas guardadas en local');
+        });
     }
 
-    function updateCoordsLabel(lat, lng) {
-        const coordsEl = $('#map-coords');
-        if (coordsEl) {
-            coordsEl.textContent = `LAT: ${lat.toFixed(4)} LON: ${lng.toFixed(4)}`;
+    function updatePlayerMarker(lat, lng) {
+        if (!playerMarker) {
+            const playerIcon = L.divIcon({
+                className: 'ctos-marker player',
+                html: '<div class="marker-pin" style="background:#00f0ff; width:16px; height:16px; border:2px solid #fff; box-shadow:0 0 15px #00f0ff"></div>',
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
+            });
+            playerMarker = L.marker([lat, lng], { icon: playerIcon, zIndexOffset: 1000 }).addTo(map);
+        } else {
+            playerMarker.setLatLng([lat, lng]);
         }
     }
 
+    function checkProximity() {
+        if (!state.myLat || !state.myLng) return;
+        const PROXIMITY_RADIUS = 30; // meters
+
+        // Check Crimes
+        for (let i = state.activeCrimes.length - 1; i >= 0; i--) {
+            const crime = state.activeCrimes[i];
+            const dist = getDistance(state.myLat, state.myLng, crime.lat, crime.lng);
+            
+            // If physically close
+            if (dist < PROXIMITY_RADIUS) {
+                state.money += crime.reward;
+                state.hacks++;
+                
+                vibrate([100, 50, 100, 50, 300]);
+                showNotification('DELITO FRUSTRADO', `¡Has llegado a la zona! Recompensa: ${crime.reward.toLocaleString('es-ES')} €`);
+                
+                // Remove crime
+                state.activeCrimes.splice(i, 1);
+                saveState();
+                refreshDynamicMarkers();
+            }
+        }
+
+        // Check Tracked Profiles
+        for (let i = state.trackedTargets.length - 1; i >= 0; i--) {
+            const target = state.trackedTargets[i];
+            const dist = getDistance(state.myLat, state.myLng, target.lat, target.lng);
+            
+            if (dist < PROXIMITY_RADIUS) {
+                const reward = rand(1000, 8000);
+                state.money += reward;
+                
+                vibrate([100, 50, 200]);
+                showNotification('OBJETIVO INTERCEPTADO', `Datos extraídos. Recompensa: ${reward.toLocaleString('es-ES')} €`);
+                
+                state.trackedTargets.splice(i, 1);
+                saveState();
+                refreshDynamicMarkers();
+            }
+        }
+    }
+
+    function refreshDynamicMarkers() {
+        if (!map) return;
+
+        // Clear existing dynamic markers
+        Object.values(dynamicMarkers).forEach(m => map.removeLayer(m));
+        dynamicMarkers = {};
+
+        // Helper to add marker
+        const addMarker = (item, typeKey, labelPrefix) => {
+            const style = MAP_TYPES[typeKey];
+            const icon = L.divIcon({
+                className: 'ctos-marker dynamic',
+                html: `<div class="marker-pin" style="background:${style.color}; border:1.5px solid #fff; box-shadow:0 0 10px ${style.color}"></div><div class="marker-label" style="border-color:${style.color}; color:${style.color}">${style.name}</div>`,
+                iconSize: [16, 16],
+                iconAnchor: [8, 8]
+            });
+            const marker = L.marker([item.lat, item.lng], { icon: icon }).addTo(map);
+            
+            marker.on('click', () => {
+                const info = $('#map-target-info');
+                $('#map-target-name').textContent = labelPrefix + item.id.split('-')[1];
+                if (typeKey === 'crime') $('#map-target-desc').textContent = 'Recompensa: ' + item.reward.toLocaleString() + ' €';
+                else if (typeKey === 'custom') $('#map-target-desc').textContent = 'Punto de interés personal';
+                else $('#map-target-desc').textContent = 'Última posición conocida';
+                info.classList.remove('hidden');
+                vibrate(20);
+            });
+            dynamicMarkers[item.id] = marker;
+        };
+
+        // Render all saved dynamic points
+        state.customMarkers.forEach(m => addMarker(m, 'custom', 'WP-'));
+        state.trackedTargets.forEach(t => addMarker(t, 'tracked', 'OBJ-'));
+        state.activeCrimes.forEach(c => addMarker(c, 'crime', 'CRIMEN-'));
+    }
+
     function seedCtosMarkers(lat, lng) {
-        // Clear old markers if any
+        // Clear old static markers
         mapMarkers.forEach(m => map.removeLayer(m));
         mapMarkers = [];
 
@@ -884,6 +1063,29 @@
                     clearInterval(interval);
                     state.intercepting = false;
                     showNotification('INTERCEPCIÓN COMPLETA', 'Conversación grabada con éxito');
+                    
+                    // Spawn a crime nearby if we have GPS
+                    if (state.myLat && state.myLng) {
+                        const angle = Math.random() * Math.PI * 2;
+                        const distanceDeg = (rand(200, 500) / 111320);
+                        const cLat = state.myLat + (Math.cos(angle) * distanceDeg);
+                        const cLng = state.myLng + (Math.sin(angle) * distanceDeg);
+                        const reward = rand(3000, 15000);
+                        
+                        state.activeCrimes.push({
+                            lat: cLat,
+                            lng: cLng,
+                            reward: reward,
+                            id: 'CRM-' + Date.now()
+                        });
+                        saveState();
+                        if (map) refreshDynamicMarkers();
+                        
+                        setTimeout(() => {
+                            showNotification('DELITO DETECTADO', 'Posible actividad criminal marcada en el mapa');
+                            vibrate([50, 50, 100, 50, 100]);
+                        }, 2000);
+                    }
                 }
             }, 2500);
         });
@@ -923,7 +1125,14 @@
         $('#btn-clear-data').addEventListener('click', () => {
             state.hacks = 0;
             state.profiles = 0;
+            state.money = 0;
             state.cameras = 0;
+            state.customMarkers = [];
+            state.trackedTargets = [];
+            state.activeCrimes = [];
+            saveState();
+            if (map) refreshDynamicMarkers();
+            
             updateStats();
             vibrate(50);
             showNotification('DATOS BORRADOS', 'Todos los registros han sido eliminados');
@@ -946,16 +1155,18 @@
     function updateStats() {
         const hackEl = $('#stat-hacks');
         const profEl = $('#stat-profiles');
-        const camEl = $('#stat-cameras');
+        const moneyEl = $('#stat-money');
         if (hackEl) hackEl.textContent = state.hacks;
         if (profEl) profEl.textContent = state.profiles;
-        if (camEl) camEl.textContent = state.cameras;
+        if (moneyEl) moneyEl.textContent = state.money.toLocaleString('es-ES');
 
         // System page too
         const sh = $('#sys-hacks-total');
         const sp = $('#sys-profiles-total');
+        const sm = $('#sys-money-total');
         if (sh) sh.textContent = state.hacks;
         if (sp) sp.textContent = state.profiles;
+        if (sm) sm.textContent = state.money.toLocaleString('es-ES');
     }
 
     // ===== NOTIFICATION =====
@@ -977,14 +1188,28 @@
         $('#btn-scan').addEventListener('click', scanProfile);
 
         $('#btn-hack-bank').addEventListener('click', () => {
-            const amount = (rand(50, 5000)).toLocaleString('es-ES');
+            const amount = rand(50, 5000);
             vibrate([50, 30, 80]);
-            showNotification('CUENTA HACKEADA', `${amount} € transferidos a tu cuenta`);
+            showNotification('CUENTA HACKEADA', `${amount.toLocaleString('es-ES')} € transferidos a tu cuenta`);
             state.hacks++;
-            updateStats();
+            state.money += amount;
+            saveState();
         });
 
         $('#btn-track').addEventListener('click', () => {
+            if (state.myLat && state.myLng) {
+                // Spawn tracked target marker randomly within 150-300m
+                const angle = Math.random() * Math.PI * 2;
+                const distanceDeg = (rand(150, 300) / 111320); // rough meter to degree conversion
+                const tLat = state.myLat + (Math.cos(angle) * distanceDeg);
+                const tLng = state.myLng + (Math.sin(angle) * distanceDeg);
+                
+                const id = 'TRK-' + Date.now();
+                state.trackedTargets.push({ lat: tLat, lng: tLng, id });
+                saveState();
+                
+                if (map) refreshDynamicMarkers(); // update map if already loaded
+            }
             vibrate([30, 50, 30, 50, 30]);
             showNotification('RASTREO ACTIVO', 'Ubicación del objetivo marcada en el mapa');
         });
@@ -992,6 +1217,7 @@
 
     // ===== INIT =====
     function init() {
+        loadState();
         setupNavigation();
         setupHacking();
         setupSurveillance();

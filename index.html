@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
@@ -9,10 +10,14 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>ctOS // MOBILE INTERFACE</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
     <!-- SCAN LINES OVERLAY -->
@@ -25,14 +30,16 @@
             <div class="ctos-logo-boot">
                 <div class="logo-circle">
                     <svg viewBox="0 0 200 200" class="logo-svg">
-                        <circle cx="100" cy="100" r="90" fill="none" stroke="#00f0ff" stroke-width="1" opacity="0.3"/>
-                        <circle cx="100" cy="100" r="70" fill="none" stroke="#00f0ff" stroke-width="2" class="rotate-ring"/>
-                        <circle cx="100" cy="100" r="50" fill="none" stroke="#00f0ff" stroke-width="1" stroke-dasharray="5 10" class="rotate-ring-reverse"/>
-                        <circle cx="100" cy="100" r="8" fill="#00f0ff"/>
-                        <line x1="100" y1="30" x2="100" y2="10" stroke="#00f0ff" stroke-width="2"/>
-                        <line x1="100" y1="170" x2="100" y2="190" stroke="#00f0ff" stroke-width="2"/>
-                        <line x1="30" y1="100" x2="10" y2="100" stroke="#00f0ff" stroke-width="2"/>
-                        <line x1="170" y1="100" x2="190" y2="100" stroke="#00f0ff" stroke-width="2"/>
+                        <circle cx="100" cy="100" r="90" fill="none" stroke="#00f0ff" stroke-width="1" opacity="0.3" />
+                        <circle cx="100" cy="100" r="70" fill="none" stroke="#00f0ff" stroke-width="2"
+                            class="rotate-ring" />
+                        <circle cx="100" cy="100" r="50" fill="none" stroke="#00f0ff" stroke-width="1"
+                            stroke-dasharray="5 10" class="rotate-ring-reverse" />
+                        <circle cx="100" cy="100" r="8" fill="#00f0ff" />
+                        <line x1="100" y1="30" x2="100" y2="10" stroke="#00f0ff" stroke-width="2" />
+                        <line x1="100" y1="170" x2="100" y2="190" stroke="#00f0ff" stroke-width="2" />
+                        <line x1="30" y1="100" x2="10" y2="100" stroke="#00f0ff" stroke-width="2" />
+                        <line x1="170" y1="100" x2="190" y2="100" stroke="#00f0ff" stroke-width="2" />
                     </svg>
                 </div>
                 <h1 class="ctos-title glitch" data-text="ctOS">ctOS</h1>
@@ -82,6 +89,10 @@
                 <p class="hub-subtitle">NODO ctOS ACTIVO // ACCESO NIVEL 5</p>
                 <div class="hub-stats">
                     <div class="stat-item">
+                        <span class="stat-value" id="stat-money">0</span>
+                        <span class="stat-label">FONDOS (€)</span>
+                    </div>
+                    <div class="stat-item">
                         <span class="stat-value" id="stat-hacks">0</span>
                         <span class="stat-label">HACKS</span>
                     </div>
@@ -89,17 +100,23 @@
                         <span class="stat-value" id="stat-profiles">0</span>
                         <span class="stat-label">PERFILES</span>
                     </div>
-                    <div class="stat-item">
-                        <span class="stat-value" id="stat-cameras">0</span>
-                        <span class="stat-label">CÁMARAS</span>
-                    </div>
                 </div>
             </div>
 
             <div class="hub-grid">
                 <button class="hub-btn" data-screen="profiler" id="btn-profiler">
                     <div class="hub-btn-icon">
-                        <svg viewBox="0 0 64 64"><circle cx="32" cy="20" r="12" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 58c0-11 9-20 20-20s20 9 20 20" fill="none" stroke="currentColor" stroke-width="2"/><line x1="32" y1="0" x2="32" y2="10" stroke="currentColor" stroke-width="1" opacity="0.5"/><line x1="32" y1="54" x2="32" y2="64" stroke="currentColor" stroke-width="1" opacity="0.5"/><line x1="0" y1="32" x2="10" y2="32" stroke="currentColor" stroke-width="1" opacity="0.5"/><line x1="54" y1="32" x2="64" y2="32" stroke="currentColor" stroke-width="1" opacity="0.5"/></svg>
+                        <svg viewBox="0 0 64 64">
+                            <circle cx="32" cy="20" r="12" fill="none" stroke="currentColor" stroke-width="2" />
+                            <path d="M12 58c0-11 9-20 20-20s20 9 20 20" fill="none" stroke="currentColor"
+                                stroke-width="2" />
+                            <line x1="32" y1="0" x2="32" y2="10" stroke="currentColor" stroke-width="1" opacity="0.5" />
+                            <line x1="32" y1="54" x2="32" y2="64" stroke="currentColor" stroke-width="1"
+                                opacity="0.5" />
+                            <line x1="0" y1="32" x2="10" y2="32" stroke="currentColor" stroke-width="1" opacity="0.5" />
+                            <line x1="54" y1="32" x2="64" y2="32" stroke="currentColor" stroke-width="1"
+                                opacity="0.5" />
+                        </svg>
                     </div>
                     <span class="hub-btn-label">PERFILADO</span>
                     <span class="hub-btn-sub">Escanear ciudadanos</span>
@@ -107,7 +124,16 @@
 
                 <button class="hub-btn" data-screen="hacking" id="btn-hacking">
                     <div class="hub-btn-icon">
-                        <svg viewBox="0 0 64 64"><rect x="8" y="8" width="48" height="48" rx="4" fill="none" stroke="currentColor" stroke-width="2"/><line x1="20" y1="20" x2="44" y2="20" stroke="currentColor" stroke-width="2"/><line x1="20" y1="28" x2="36" y2="28" stroke="currentColor" stroke-width="2"/><line x1="20" y1="36" x2="40" y2="36" stroke="currentColor" stroke-width="2"/><line x1="20" y1="44" x2="32" y2="44" stroke="currentColor" stroke-width="2"/><circle cx="48" cy="48" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M44 48l3 3 5-6" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+                        <svg viewBox="0 0 64 64">
+                            <rect x="8" y="8" width="48" height="48" rx="4" fill="none" stroke="currentColor"
+                                stroke-width="2" />
+                            <line x1="20" y1="20" x2="44" y2="20" stroke="currentColor" stroke-width="2" />
+                            <line x1="20" y1="28" x2="36" y2="28" stroke="currentColor" stroke-width="2" />
+                            <line x1="20" y1="36" x2="40" y2="36" stroke="currentColor" stroke-width="2" />
+                            <line x1="20" y1="44" x2="32" y2="44" stroke="currentColor" stroke-width="2" />
+                            <circle cx="48" cy="48" r="10" fill="none" stroke="currentColor" stroke-width="2" />
+                            <path d="M44 48l3 3 5-6" fill="none" stroke="currentColor" stroke-width="2" />
+                        </svg>
                     </div>
                     <span class="hub-btn-label">HACKEO</span>
                     <span class="hub-btn-sub">Infraestructura ctOS</span>
@@ -115,7 +141,15 @@
 
                 <button class="hub-btn" data-screen="surveillance" id="btn-surveillance">
                     <div class="hub-btn-icon">
-                        <svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="24" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="32" cy="32" r="12" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="32" cy="32" r="4" fill="currentColor"/><line x1="32" y1="2" x2="32" y2="8" stroke="currentColor" stroke-width="2"/><line x1="32" y1="56" x2="32" y2="62" stroke="currentColor" stroke-width="2"/><line x1="2" y1="32" x2="8" y2="32" stroke="currentColor" stroke-width="2"/><line x1="56" y1="32" x2="62" y2="32" stroke="currentColor" stroke-width="2"/></svg>
+                        <svg viewBox="0 0 64 64">
+                            <circle cx="32" cy="32" r="24" fill="none" stroke="currentColor" stroke-width="2" />
+                            <circle cx="32" cy="32" r="12" fill="none" stroke="currentColor" stroke-width="2" />
+                            <circle cx="32" cy="32" r="4" fill="currentColor" />
+                            <line x1="32" y1="2" x2="32" y2="8" stroke="currentColor" stroke-width="2" />
+                            <line x1="32" y1="56" x2="32" y2="62" stroke="currentColor" stroke-width="2" />
+                            <line x1="2" y1="32" x2="8" y2="32" stroke="currentColor" stroke-width="2" />
+                            <line x1="56" y1="32" x2="62" y2="32" stroke="currentColor" stroke-width="2" />
+                        </svg>
                     </div>
                     <span class="hub-btn-label">VIGILANCIA</span>
                     <span class="hub-btn-sub">Cámaras ctOS</span>
@@ -123,7 +157,14 @@
 
                 <button class="hub-btn" data-screen="map" id="btn-map">
                     <div class="hub-btn-icon">
-                        <svg viewBox="0 0 64 64"><polygon points="8,8 24,16 40,8 56,16 56,56 40,48 24,56 8,48" fill="none" stroke="currentColor" stroke-width="2"/><line x1="24" y1="16" x2="24" y2="56" stroke="currentColor" stroke-width="1" opacity="0.5"/><line x1="40" y1="8" x2="40" y2="48" stroke="currentColor" stroke-width="1" opacity="0.5"/><circle cx="32" cy="28" r="4" fill="currentColor"/></svg>
+                        <svg viewBox="0 0 64 64">
+                            <polygon points="8,8 24,16 40,8 56,16 56,56 40,48 24,56 8,48" fill="none"
+                                stroke="currentColor" stroke-width="2" />
+                            <line x1="24" y1="16" x2="24" y2="56" stroke="currentColor" stroke-width="1"
+                                opacity="0.5" />
+                            <line x1="40" y1="8" x2="40" y2="48" stroke="currentColor" stroke-width="1" opacity="0.5" />
+                            <circle cx="32" cy="28" r="4" fill="currentColor" />
+                        </svg>
                     </div>
                     <span class="hub-btn-label">MAPA</span>
                     <span class="hub-btn-sub">Red ctOS de la ciudad</span>
@@ -131,7 +172,14 @@
 
                 <button class="hub-btn" data-screen="audio" id="btn-audio">
                     <div class="hub-btn-icon">
-                        <svg viewBox="0 0 64 64"><rect x="26" y="8" width="12" height="32" rx="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 32c0 9 7 16 16 16s16-7 16-16" fill="none" stroke="currentColor" stroke-width="2"/><line x1="32" y1="48" x2="32" y2="58" stroke="currentColor" stroke-width="2"/><line x1="22" y1="58" x2="42" y2="58" stroke="currentColor" stroke-width="2"/></svg>
+                        <svg viewBox="0 0 64 64">
+                            <rect x="26" y="8" width="12" height="32" rx="6" fill="none" stroke="currentColor"
+                                stroke-width="2" />
+                            <path d="M16 32c0 9 7 16 16 16s16-7 16-16" fill="none" stroke="currentColor"
+                                stroke-width="2" />
+                            <line x1="32" y1="48" x2="32" y2="58" stroke="currentColor" stroke-width="2" />
+                            <line x1="22" y1="58" x2="42" y2="58" stroke="currentColor" stroke-width="2" />
+                        </svg>
                     </div>
                     <span class="hub-btn-label">AUDIO</span>
                     <span class="hub-btn-sub">Interceptar comms</span>
@@ -139,7 +187,11 @@
 
                 <button class="hub-btn" data-screen="system" id="btn-system">
                     <div class="hub-btn-icon">
-                        <svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M32 16v-8M32 56v-8M16 32H8M56 32h-8M21 21l-5-5M48 48l-5-5M43 21l5-5M16 48l5-5" stroke="currentColor" stroke-width="2"/></svg>
+                        <svg viewBox="0 0 64 64">
+                            <circle cx="32" cy="32" r="10" fill="none" stroke="currentColor" stroke-width="2" />
+                            <path d="M32 16v-8M32 56v-8M16 32H8M56 32h-8M21 21l-5-5M48 48l-5-5M43 21l5-5M16 48l5-5"
+                                stroke="currentColor" stroke-width="2" />
+                        </svg>
                     </div>
                     <span class="hub-btn-label">SISTEMA</span>
                     <span class="hub-btn-sub">Config ctOS</span>
@@ -169,11 +221,12 @@
                     <div class="scan-line" id="scan-line"></div>
                     <div class="face-reticle" id="face-reticle">
                         <svg viewBox="0 0 100 100">
-                            <rect x="5" y="5" width="90" height="90" rx="10" fill="none" stroke="#00f0ff" stroke-width="1" stroke-dasharray="20 10"/>
-                            <line x1="50" y1="0" x2="50" y2="20" stroke="#00f0ff" stroke-width="1"/>
-                            <line x1="50" y1="80" x2="50" y2="100" stroke="#00f0ff" stroke-width="1"/>
-                            <line x1="0" y1="50" x2="20" y2="50" stroke="#00f0ff" stroke-width="1"/>
-                            <line x1="80" y1="50" x2="100" y2="50" stroke="#00f0ff" stroke-width="1"/>
+                            <rect x="5" y="5" width="90" height="90" rx="10" fill="none" stroke="#00f0ff"
+                                stroke-width="1" stroke-dasharray="20 10" />
+                            <line x1="50" y1="0" x2="50" y2="20" stroke="#00f0ff" stroke-width="1" />
+                            <line x1="50" y1="80" x2="50" y2="100" stroke="#00f0ff" stroke-width="1" />
+                            <line x1="0" y1="50" x2="20" y2="50" stroke="#00f0ff" stroke-width="1" />
+                            <line x1="80" y1="50" x2="100" y2="50" stroke="#00f0ff" stroke-width="1" />
                         </svg>
                     </div>
                 </div>
@@ -244,7 +297,9 @@
                         <p>Controlar semáforos del distrito</p>
                     </div>
                     <div class="hack-status">DISPONIBLE</div>
-                    <div class="hack-progress-bar"><div class="hack-fill"></div></div>
+                    <div class="hack-progress-bar">
+                        <div class="hack-fill"></div>
+                    </div>
                 </div>
                 <div class="hack-card" data-hack="barriers">
                     <div class="hack-icon">🚧</div>
@@ -253,7 +308,9 @@
                         <p>Activar/desactivar barreras viales</p>
                     </div>
                     <div class="hack-status">DISPONIBLE</div>
-                    <div class="hack-progress-bar"><div class="hack-fill"></div></div>
+                    <div class="hack-progress-bar">
+                        <div class="hack-fill"></div>
+                    </div>
                 </div>
                 <div class="hack-card" data-hack="blackout">
                     <div class="hack-icon">⚡</div>
@@ -262,7 +319,9 @@
                         <p>Corte de energía en toda la zona</p>
                     </div>
                     <div class="hack-status">DISPONIBLE</div>
-                    <div class="hack-progress-bar"><div class="hack-fill"></div></div>
+                    <div class="hack-progress-bar">
+                        <div class="hack-fill"></div>
+                    </div>
                 </div>
                 <div class="hack-card" data-hack="pipes">
                     <div class="hack-icon">💧</div>
@@ -271,7 +330,9 @@
                         <p>Reventar tuberías de agua</p>
                     </div>
                     <div class="hack-status">DISPONIBLE</div>
-                    <div class="hack-progress-bar"><div class="hack-fill"></div></div>
+                    <div class="hack-progress-bar">
+                        <div class="hack-fill"></div>
+                    </div>
                 </div>
                 <div class="hack-card" data-hack="comms">
                     <div class="hack-icon">📡</div>
@@ -280,7 +341,9 @@
                         <p>Interferir señales de radio</p>
                     </div>
                     <div class="hack-status">DISPONIBLE</div>
-                    <div class="hack-progress-bar"><div class="hack-fill"></div></div>
+                    <div class="hack-progress-bar">
+                        <div class="hack-fill"></div>
+                    </div>
                 </div>
                 <div class="hack-card" data-hack="doors">
                     <div class="hack-icon">🔒</div>
@@ -289,7 +352,9 @@
                         <p>Desbloquear puertas electrónicas</p>
                     </div>
                     <div class="hack-status">DISPONIBLE</div>
-                    <div class="hack-progress-bar"><div class="hack-fill"></div></div>
+                    <div class="hack-progress-bar">
+                        <div class="hack-fill"></div>
+                    </div>
                 </div>
             </div>
             <!-- HACK TERMINAL -->
@@ -435,15 +500,21 @@
                 </div>
                 <div class="sys-row">
                     <span>CPU</span>
-                    <div class="sys-bar"><div class="sys-bar-fill" id="sys-cpu" style="width:34%"></div></div>
+                    <div class="sys-bar">
+                        <div class="sys-bar-fill" id="sys-cpu" style="width:34%"></div>
+                    </div>
                 </div>
                 <div class="sys-row">
                     <span>RAM</span>
-                    <div class="sys-bar"><div class="sys-bar-fill" id="sys-ram" style="width:58%"></div></div>
+                    <div class="sys-bar">
+                        <div class="sys-bar-fill" id="sys-ram" style="width:58%"></div>
+                    </div>
                 </div>
                 <div class="sys-row">
                     <span>Red ctOS</span>
-                    <div class="sys-bar"><div class="sys-bar-fill green" id="sys-network" style="width:92%"></div></div>
+                    <div class="sys-bar">
+                        <div class="sys-bar-fill green" id="sys-network" style="width:92%"></div>
+                    </div>
                 </div>
             </div>
             <div class="sys-section">
@@ -451,6 +522,10 @@
                 <div class="sys-row">
                     <span>Nivel de Acceso</span>
                     <span class="sys-value highlight">ADMINISTRADOR</span>
+                </div>
+                <div class="sys-row">
+                    <span>Fondos Adquiridos</span>
+                    <span class="sys-value" style="color:var(--green)">€ <span id="sys-money-total">0</span></span>
                 </div>
                 <div class="sys-row">
                     <span>Hacks Completados</span>
@@ -478,7 +553,9 @@
         </div>
     </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="app.js"></script>
 </body>
+
 </html>
